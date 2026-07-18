@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Виджет распродаж</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 8px 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 0.85rem;
+      color: #1a1a2e;
+      background: transparent;
+    }
+
+    .sales-widget {
+      max-width: 100%;
+    }
+
+    .sales-widget .widget-title {
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      color: #2c3e50;
+      border-bottom: 1px solid #eaeef2;
+      padding-bottom: 4px;
+    }
+
+    .sales-widget .sale-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+      border-bottom: 1px solid #f0f2f5;
+      font-size: 0.8rem;
+    }
+
+    .sales-widget .sale-item:last-child {
+      border-bottom: none;
+    }
+
+    .sales-widget .sale-item .name {
+      font-weight: 500;
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-right: 6px;
+    }
+
+    .sales-widget .sale-item .name a {
+      color: #1a1a2e;
+      text-decoration: none;
+    }
+
+    .sales-widget .sale-item .name a:hover {
+      color: #0070f3;
+      text-decoration: underline;
+    }
+
+    .sales-widget .sale-item .date {
+      color: #6c7a8a;
+      font-size: 0.7rem;
+      white-space: nowrap;
+      margin-right: 6px;
+    }
+
+    .sales-widget .badge {
+      display: inline-block;
+      font-weight: 600;
+      font-size: 0.55rem;
+      padding: 1px 8px;
+      border-radius: 30px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+    }
+
+    .sales-widget .badge.active {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .sales-widget .badge.future {
+      background: #dce5f0;
+      color: #1e4b7a;
+    }
+
+    .sales-widget .badge.nearest {
+      background: #ffd700;
+      color: #7a6200;
+    }
+
+    .sales-widget .badge.past {
+      background: #e8eaed;
+      color: #9aa8b5;
+    }
+
+    .sales-widget .widget-footer {
+      margin-top: 8px;
+      padding-top: 6px;
+      border-top: 1px solid #eaeef2;
+      font-size: 0.7rem;
+      text-align: right;
+    }
+
+    .sales-widget .widget-footer a {
+      color: #0070f3;
+      text-decoration: none;
+    }
+
+    .sales-widget .widget-footer a:hover {
+      text-decoration: underline;
+    }
+
+    .sales-widget .loading {
+      color: #6c7a8a;
+      font-style: italic;
+      font-size: 0.8rem;
+      padding: 4px 0;
+    }
+
+    .sales-widget .empty-state {
+      color: #8a9aa8;
+      font-style: italic;
+      font-size: 0.8rem;
+      padding: 4px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="sales-widget" id="widget-sales-container">
+    <div class="widget-title">📅 Актуальные распродажи</div>
+    <div id="widget-content" class="loading">⏳ Загрузка данных...</div>
+  </div>
+
+  <script>
+    // ================================================================
+    // ССЫЛКА НА JSON-ФАЙЛ (GitHub)
+    // ================================================================
+    const WIDGET_JSON_URL = 'https://raw.githubusercontent.com/maximdobizha/deckclub-data/main/sales.json';
+
+    // ================================================================
+    // ОСНОВНАЯ ЛОГИКА ВИДЖЕТА
+    // ================================================================
+    function renderWidget(data) {
+      const container = document.getElementById('widget-content');
+      if (!container) return;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const relevant = [];
+      const all = data.sales || [];
+
+      all.forEach(item => {
+        if (!item.start || !item.end) return;
+        const start = new Date(item.start + 'T00:00:00');
+        const end = new Date(item.end + 'T00:00:00');
+        end.setHours(23, 59, 59, 999);
+
+        if (today <= end) {
+          relevant.push(item);
+        }
+      });
+
+      relevant.sort((a, b) => new Date(a.start) - new Date(b.start));
+
+      const nearest = relevant.length > 0 ? relevant.shift() : null;
+      const upcoming = relevant.slice(0, 3);
+
+      let html = '';
+
+      if (nearest) {
+        html += renderItem(nearest, 'nearest');
+      }
+
+      if (upcoming.length > 0) {
+        upcoming.forEach(item => {
+          html += renderItem(item, 'future');
+        });
+        if (relevant.length > 3) {
+          html += `<div style="font-size:0.7rem; color:#8a9aa8; text-align:right; padding:2px 0;">+ ещё ${relevant.length - 3}...</div>`;
+        }
+      }
+
+      if (!html) {
+        html = `<div class="empty-state">Нет предстоящих распродаж</div>`;
+      }
+
+      html += `
+        <div class="widget-footer">
+          <a href="/p/steam-sales-calendar-2026">Весь календарь →</a>
+        </div>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    function renderItem(item, status) {
+      let dateStr = '';
+      if (item.start && item.end) {
+        dateStr = formatDate(item.start) + ' – ' + formatDate(item.end);
+      } else if (item.description) {
+        dateStr = item.description;
+      } else {
+        dateStr = 'Дата TBD';
+      }
+
+      let badgeText = '', badgeClass = '';
+      if (status === 'active') { badgeText = 'Идёт'; badgeClass = 'active'; }
+      else if (status === 'nearest') { badgeText = '⭐ Ближайшая'; badgeClass = 'nearest'; }
+      else { badgeText = 'Предстоит'; badgeClass = 'future'; }
+
+      const nameHtml = item.url ? `<a href="${item.url}" target="_blank">${item.name}</a>` : item.name;
+
+      return `
+        <div class="sale-item">
+          <span class="name">${nameHtml}</span>
+          <span class="date">${dateStr}</span>
+          <span class="badge ${badgeClass}">${badgeText}</span>
+        </div>
+      `;
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const parts = dateStr.split('-');
+      const months = { '01': 'янв', '02': 'фев', '03': 'мар', '04': 'апр', '05': 'май', '06': 'июн', '07': 'июл', '08': 'авг', '09': 'сен', '10': 'окт', '11': 'ноя', '12': 'дек' };
+      return parseInt(parts[2]) + ' ' + months[parts[1]];
+    }
+
+    function loadWidgetData() {
+      const container = document.getElementById('widget-content');
+      if (!container) return;
+
+      fetch(WIDGET_JSON_URL)
+        .then(response => {
+          if (!response.ok) throw new Error('Не удалось загрузить данные');
+          return response.json();
+        })
+        .then(data => renderWidget(data))
+        .catch(() => {
+          container.innerHTML = `
+            <div style="color:#c0392b; font-size:0.8rem; padding:4px 0;">
+              ⚠️ Ошибка загрузки данных
+            </div>
+            <div class="widget-footer">
+              <a href="/p/steam-sales-calendar-2026">Перейти к календарю →</a>
+            </div>
+          `;
+        });
+    }
+
+    // Запускаем при загрузке
+    document.addEventListener('DOMContentLoaded', loadWidgetData);
+  </script>
+</body>
+</html>
