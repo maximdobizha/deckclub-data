@@ -1,0 +1,28 @@
+{
+  "sales": [
+    {"name": "Фестиваль поездов", "start_date": "20.07", "end_date": "27.07"},
+    {"name": "Фестиваль киберпанка", "start_date": "03.08", "end_date": "10.08"},
+    {"name": "Фестиваль кеглей и колышков", "start_date": "17.08", "end_date": "20.08"},
+    {"name": "Фестиваль программирования", "start_date": "10.09", "end_date": "14.09"},
+    {"name": "Осенняя распродажа", "start_date": "01.10", "end_date": "08.10"},
+    {"name": "Кулинарный фестиваль", "start_date": "12.10", "end_date": "19.10"},
+    {"name": "Фестиваль «Играм быть» 2026", "start_date": "19.10", "end_date": "26.10"},
+    {"name": "Фестиваль «Страхи в Steam 5»", "start_date": "26.10", "end_date": "02.11"},
+    {"name": "Фестиваль ролевых автобаттлеров", "start_date": "16.11", "end_date": "23.11"},
+    {"name": "Зимняя распродажа 2026", "start_date": "17.12", "end_date": "04.01"}
+  ],
+  "free_games": [
+    {
+      "title": "Dying Light",
+      "platform": "Epic Games",
+      "end_date": "23.07",
+      "url": "https://epicgames.com"
+    },
+    {
+      "title": "Portal 2",
+      "platform": "Steam",
+      "end_date": "25.07",
+      "url": "https://steampowered.com"
+    }
+  ]
+}
